@@ -2,11 +2,11 @@
 name = "raytracer"
 version = "0.1.0"
 dependencies = [
- "rusty_math 0.1.0 (git+https://github.com/heftyfunseeker/rusty-math.git)",
+ "rusty_math 0.1.1 (git+https://github.com/heftyfunseeker/rusty-math.git)",
 ]
 
 [[package]]
 name = "rusty_math"
-version = "0.1.0"
-source = "git+https://github.com/heftyfunseeker/rusty-math.git#0b72581b5c11795b33c11ef69ec806704fe900d7"
+version = "0.1.1"
+source = "git+https://github.com/heftyfunseeker/rusty-math.git#a79cdc4da0c129d636a90a495cf7f86e5d51f30d"
 
