@@ -6,22 +6,29 @@ use std::io::prelude::*;
 use std::path::Path;
 use rusty_math::*;
 
-fn hit_sphere(center: &Vec3, radius: f64, ray: &Ray) -> bool {
+fn hit_sphere(center: &Vec3, radius: f64, ray: &Ray) -> f64 {
     let offset_origin = &ray.origin - center;
     let a = ray.dir.dot(&ray.dir);
     let b = 2f64 * offset_origin.dot(&ray.dir);
     let c = offset_origin.dot(&offset_origin) - radius * radius;
     let discriminant = &b * &b - 4f64 * &a * &c;
-    return discriminant > 0f64;
+
+	if discriminant < 0f64 {
+		return -1f64;
+	}
+
+    return (-b - discriminant.sqrt()) / (2.0f64 * &a);
 }
 
 fn color(ray: &Ray) -> Vec3 {
-    if hit_sphere(&Vec3::new(0f64,0f64,-1f64), 0.5f64, ray) {
-        return Vec3::new(1f64,0f64,0f64);
-    }
-    let t = 0.5f64 * (ray.dir.normalize().y + 1.0f64);
+    let mut t = hit_sphere(&Vec3::new(0f64,0f64,-1f64), 0.5f64, ray);
+	if t > 0.0f64 {
+		let unit_normal = (&ray.point_at(t) - &Vec3::new(0f64, 0f64, -1f64)).normalize(); // surface - sphere center
+		return 0.5f64 * &Vec3::new(unit_normal.x + 1f64, unit_normal.y + 1f64, unit_normal.z + 1f64);
+	}
     let white = Vec3::new(1f64, 1f64, 1f64);
     let blue = Vec3::new(0.5f64, 0.7f64, 1.0f64);
+	t = 0.5f64 * ray.dir.normalize().y + 1.0f64;
     return &((1.0f64 - t) * &white) + &(t * &blue);
 }
 

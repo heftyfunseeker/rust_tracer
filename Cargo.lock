@@ -10,3 +10,5 @@ name = "rusty_math"
 version = "0.1.1"
 source = "git+https://github.com/heftyfunseeker/rusty-math.git#a79cdc4da0c129d636a90a495cf7f86e5d51f30d"
 
+[metadata]
+"checksum rusty_math 0.1.1 (git+https://github.com/heftyfunseeker/rusty-math.git)" = "<none>"
