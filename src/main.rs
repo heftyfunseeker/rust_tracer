@@ -1,4 +1,5 @@
 extern crate rusty_math;
+extern crate rand;
 
 use std::error::Error;
 use std::fs::File;
@@ -6,64 +7,63 @@ use std::io::prelude::*;
 use std::path::Path;
 use rusty_math::*;
 
-fn hit_sphere(center: &Vec3, radius: f64, ray: &Ray) -> f64 {
-    let offset_origin = &ray.origin - center;
-    let a = ray.dir.dot(&ray.dir);
-    let b = 2f64 * offset_origin.dot(&ray.dir);
-    let c = offset_origin.dot(&offset_origin) - radius * radius;
-    let discriminant = &b * &b - 4f64 * &a * &c;
+mod renderable;
+use renderable::RenderList;
+use renderable::shapes;
 
-	if discriminant < 0f64 {
-		return -1f64;
-	}
+mod camera;
+use camera::Camera;
 
-    return (-b - discriminant.sqrt()) / (2.0f64 * &a);
-}
+mod render_buffer;
+use render_buffer::RenderBufferI32;
 
-fn color(ray: &Ray) -> Vec3 {
-    let mut t = hit_sphere(&Vec3::new(0f64,0f64,-1f64), 0.5f64, ray);
-	if t > 0.0f64 {
-		let unit_normal = (&ray.point_at(t) - &Vec3::new(0f64, 0f64, -1f64)).normalize(); // surface - sphere center
-		return 0.5f64 * &Vec3::new(unit_normal.x + 1f64, unit_normal.y + 1f64, unit_normal.z + 1f64);
-	}
-    let white = Vec3::new(1f64, 1f64, 1f64);
-    let blue = Vec3::new(0.5f64, 0.7f64, 1.0f64);
-	t = 0.5f64 * ray.dir.normalize().y + 1.0f64;
-    return &((1.0f64 - t) * &white) + &(t * &blue);
-}
+mod renderer;
+
 
 fn main() {
-    let nx = 200;
-    let ny = 100;
-    let lower_left = Vec3::new(-2f64,-1f64,-1f64);
-    let horizontal = Vec3::new(4f64,0f64,0f64);
-    let vertical = Vec3::new(0f64,2f64,0f64);
-    let origin = Vec3::new(0f64,0f64,0f64);
+	// setup the world
+	let camera = Camera::new();
+	let mut output_buffer = RenderBufferI32::new(200, 100);
 
-    let mut r = Ray::new(origin, Vec3::new(0f64,0f64,0f64));
+	let mut world = RenderList {renderables: Vec::new()};
+	let small_sphere = shapes::Sphere {center: Vec3::new(0f64, 0f64, -1f64), radius: 0.5f64};
+	let big_sphere = shapes::Sphere {center: Vec3::new(0f64, -100.5f64, -1f64), radius: 100f64};
+	world.renderables.push(Box::new(small_sphere));
+	world.renderables.push(Box::new(big_sphere));
+
+
+	// render
+	{
+		let render_settings = renderer::RenderSettings {
+			num_samples_per_pixel: 100,
+		};
+		// create the package to render
+		let mut render_package = renderer::RenderPackage {
+			render_list: &world,
+			camera: &camera,
+			output_buffer: &mut output_buffer,
+		};
+
+
+		renderer::render(&mut render_package, &render_settings);
+	}
 
     // write header
     let mut ppm_str = String::new();
-    ppm_str.push_str(&format!("P3\n{} {}\n255\n", nx, ny));
+    ppm_str.push_str(&format!("P3\n{} {}\n255\n", output_buffer.width, output_buffer.height));
 
-    for j in (0..ny).rev() {
-        for i in 0..nx {
-            let u = (i as f64) / (nx as f64);
-            let v = (j as f64) / (ny as f64);
+	let mut pixel_index:usize = 0;
+	while pixel_index < output_buffer.buffer.len()
+	{
+		let ir = output_buffer.buffer[pixel_index];
+		let ig = output_buffer.buffer[pixel_index + 1];
+		let ib = output_buffer.buffer[pixel_index + 2];
 
-            let u_offset = u * &horizontal;
-            let v_offset = v * &vertical;
+	    ppm_str.push_str(&format!("{} {} {}\n", ir, ig, ib));
 
-            r.dir = &lower_left + &(&u_offset + &v_offset);
-            let c = color(&r);
+		pixel_index += 3;
+	}
 
-            let ir = (255.99 * c.x) as i32;
-            let ig = (255.99 * c.y) as i32;
-            let ib = (255.99 * c.z) as i32;
-
-            ppm_str.push_str(&format!("{} {} {}\n", ir, ig, ib));
-        }
-    }
 
     // write to file
     let path = Path::new("image.ppm");
@@ -77,5 +77,5 @@ fn main() {
             panic!("{}", why.description())
         },
         Ok(_) => println!("write to file successful")
-    }
+    };
 }

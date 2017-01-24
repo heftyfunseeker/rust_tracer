@@ -5,3 +5,4 @@ authors = ["heftyfunseeker <niccosimone@gmail.com>"]
 
 [dependencies]
 rusty_math = { git = "https://github.com/heftyfunseeker/rusty-math.git" }
+rand = "*"
