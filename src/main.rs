@@ -11,6 +11,8 @@ mod renderable;
 use renderable::RenderList;
 use renderable::shapes;
 
+use renderable::materials;
+
 mod camera;
 use camera::Camera;
 
@@ -19,18 +21,18 @@ use render_buffer::RenderBufferI32;
 
 mod renderer;
 
-
 fn main() {
 	// setup the world
-	let camera = Camera::new();
-	let mut output_buffer = RenderBufferI32::new(200, 100);
-
-	let mut world = RenderList {renderables: Vec::new()};
+	// all materials must be declared before the renderlist references them
+	let lambertian_red = materials::Lambertian {albedo: Vec3::new(0.8f64, 0.3f64, 0.3f64)};
+	let lambertian_blue = materials::Lambertian {albedo: Vec3::new(0.8f64, 0.8f64, 0f64)};
+	let mut world = RenderList::new();
 	let small_sphere = shapes::Sphere {center: Vec3::new(0f64, 0f64, -1f64), radius: 0.5f64};
 	let big_sphere = shapes::Sphere {center: Vec3::new(0f64, -100.5f64, -1f64), radius: 100f64};
-	world.renderables.push(Box::new(small_sphere));
-	world.renderables.push(Box::new(big_sphere));
-
+	world.add_sphere(&small_sphere, &lambertian_red);
+	world.add_sphere(&big_sphere, &lambertian_blue);
+	let camera = Camera::new();
+	let mut output_buffer = RenderBufferI32::new(200, 100);
 
 	// render
 	{
@@ -43,7 +45,6 @@ fn main() {
 			camera: &camera,
 			output_buffer: &mut output_buffer,
 		};
-
 
 		renderer::render(&mut render_package, &render_settings);
 	}
@@ -63,7 +64,6 @@ fn main() {
 
 		pixel_index += 3;
 	}
-
 
     // write to file
     let path = Path::new("image.ppm");

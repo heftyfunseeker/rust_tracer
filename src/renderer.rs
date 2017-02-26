@@ -3,16 +3,16 @@ extern crate rand;
 
 use rusty_math::*;
 
-use renderable::RenderList;
 use renderable::HitRecord;
-use renderable::Renderable;
+use renderable::RenderList;
+use renderable::MaterialOutput;
 use camera::Camera;
 use render_buffer::RenderBufferI32;
 use rand::Rng;
 use std::f64;
 
 pub struct RenderPackage<'a> {
-	pub render_list: &'a RenderList,
+	pub render_list: &'a RenderList<'a>,
 	pub camera: &'a Camera,
 	pub output_buffer: &'a mut RenderBufferI32,
 }
@@ -38,7 +38,7 @@ pub fn render(render_package: &mut RenderPackage, render_settings: &RenderSettin
 	            let v = (y as f64 + rand_offset_y) / (num_pixels_y as f64);
 
 				let r = camera.get_ray(u, v);
-	             c += &color(&r, &render_package.render_list);
+	             c += &color(&r, &render_package.render_list, 0i32);
 			}
 			c /= render_settings.num_samples_per_pixel as f64;
 			c.x = c.x.sqrt();
@@ -68,14 +68,21 @@ fn random_in_unit_sphere() -> Vec3 {
 	return p;
 }
 
-fn color(ray: &Ray, render_list: &RenderList) -> Vec3 {
+// if we hit, construct a material input, and then create the output using the new input
+fn color(ray: &Ray, render_list: &RenderList, depth: i32) -> Vec3 {
 	// render the list
 	let mut hit_record = HitRecord::new();
-	if render_list.hit(ray, 0.001f64, f64::MAX, &mut hit_record) {
-		let target = &(&hit_record.point + &hit_record.normal) + &random_in_unit_sphere();
-		let target_dir = &target - &hit_record.point;
-
-		return 0.5f64 * &color(&Ray::new(hit_record.point, target_dir), &render_list);
+	if render_list.try_get_hit_record(ray, 0.001f64, f64::MAX, &mut hit_record) {
+		let material_package = render_list.get_material_package(&hit_record.ray, hit_record.time, hit_record.index);
+		let mut material_output = MaterialOutput::new();
+		if depth < 50 && material_package.material.apply(&material_package.material_input, &mut material_output) {
+	 		let c = color(&material_output.scattered, render_list, depth + 1);
+			return Vec3::new(
+				c.x * material_output.attenuation.x,
+				c.y * material_output.attenuation.y,
+				c.z * material_output.attenuation.z
+			);
+		}
 	}
 
 	// else color the background with a gradient
