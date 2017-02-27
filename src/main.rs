@@ -26,11 +26,17 @@ fn main() {
 	// all materials must be declared before the renderlist references them
 	let lambertian_red = materials::Lambertian {albedo: Vec3::new(0.8f64, 0.3f64, 0.3f64)};
 	let lambertian_blue = materials::Lambertian {albedo: Vec3::new(0.8f64, 0.8f64, 0f64)};
+	let metal_1 = materials::Metal {albedo: Vec3::new(0.8f64, 0.6f64, 0.2f64), fuzziness: 1.0f64};
+	let metal_2 = materials::Metal {albedo: Vec3::new(0.8f64, 0.8f64, 0.8f64), fuzziness: 0.3f64};
 	let mut world = RenderList::new();
 	let small_sphere = shapes::Sphere {center: Vec3::new(0f64, 0f64, -1f64), radius: 0.5f64};
+	let right_sphere  = shapes::Sphere {center: Vec3::new(-1f64, 0f64, -1f64), radius: 0.5f64};
+	let left_sphere  = shapes::Sphere {center: Vec3::new(1f64, 0f64, -1f64), radius: 0.5f64};
 	let big_sphere = shapes::Sphere {center: Vec3::new(0f64, -100.5f64, -1f64), radius: 100f64};
 	world.add_sphere(&small_sphere, &lambertian_red);
 	world.add_sphere(&big_sphere, &lambertian_blue);
+	world.add_sphere(&right_sphere, &metal_2);
+	world.add_sphere(&left_sphere, &metal_1);
 	let camera = Camera::new();
 	let mut output_buffer = RenderBufferI32::new(200, 100);
 

@@ -54,20 +54,6 @@ pub fn render(render_package: &mut RenderPackage, render_settings: &RenderSettin
     }
 }
 
-fn random_in_unit_sphere() -> Vec3 {
-	let mut p;
-
-	while {
-		let rand_x = rand::thread_rng().gen_range(0f64,1f64);
-		let rand_y = rand::thread_rng().gen_range(0f64,1f64);
-		let rand_z = rand::thread_rng().gen_range(0f64,1f64);
-		p = &(2.0f64 * &Vec3::new(rand_x, rand_y, rand_z)) - &Vec3::new(1f64, 1f64, 1f64);
-		p.length_squared() >= 1.0f64
-	} {}
-
-	return p;
-}
-
 // if we hit, construct a material input, and then create the output using the new input
 fn color(ray: &Ray, render_list: &RenderList, depth: i32) -> Vec3 {
 	// render the list
@@ -75,13 +61,16 @@ fn color(ray: &Ray, render_list: &RenderList, depth: i32) -> Vec3 {
 	if render_list.try_get_hit_record(ray, 0.001f64, f64::MAX, &mut hit_record) {
 		let material_package = render_list.get_material_package(&hit_record.ray, hit_record.time, hit_record.index);
 		let mut material_output = MaterialOutput::new();
-		if depth < 50 && material_package.material.apply(&material_package.material_input, &mut material_output) {
+		if (depth < 50) && material_package.material.apply(&material_package.material_input, &mut material_output) {
 	 		let c = color(&material_output.scattered, render_list, depth + 1);
 			return Vec3::new(
 				c.x * material_output.attenuation.x,
 				c.y * material_output.attenuation.y,
 				c.z * material_output.attenuation.z
 			);
+		}
+		else {
+			return Vec3::new(0f64, 0f64, 0f64);
 		}
 	}
 

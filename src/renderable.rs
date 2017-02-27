@@ -22,16 +22,16 @@ impl HitRecord {
 }
 
 fn random_in_unit_sphere() -> Vec3 {
-	let mut p;
-
+	let u = &Vec3::new(1f64, 1f64, 1f64);
+	let mut p = Vec3::new(2f64, 2f64, 2f64);
 	while {
+		p.length_squared() >= 1.0f64
+	} {
 		let rand_x = rand::thread_rng().gen_range(0f64,1f64);
 		let rand_y = rand::thread_rng().gen_range(0f64,1f64);
 		let rand_z = rand::thread_rng().gen_range(0f64,1f64);
-		p = &(2.0f64 * &Vec3::new(rand_x, rand_y, rand_z)) - &Vec3::new(1f64, 1f64, 1f64);
-		p.length_squared() >= 1.0f64
-	} {}
-
+		p = &(2.0f64 * &Vec3::new(rand_x, rand_y, rand_z)) - u;
+	}
 	return p;
 }
 
@@ -88,9 +88,13 @@ impl<'a> RenderList<'a> {
 
 		pub fn get_material_package(&self, ray: &Ray, hit_time: f64, hit_index:usize) -> MaterialPackage<'a> {
 				let sphere = &self.m_spheres[hit_index];
+				//@nicco: make the vec3 and ray classes implement the copy trait
+				let origin = Vec3::new(ray.origin.x, ray.origin.y, ray.origin.z);
+				let dir = Vec3::new(ray.dir.x, ray.dir.y, ray.dir.z);
 				let material_input = MaterialInput {
 					point: ray.point_at(hit_time),
 					normal: &(&ray.point_at(hit_time) - &sphere.center) / sphere.radius,
+					incoming_ray: Ray::new(origin, dir)
 				};
 
 				let material_package = MaterialPackage {
@@ -140,6 +144,7 @@ pub mod shapes {
 }
 
 pub struct MaterialInput {
+	pub incoming_ray: Ray,
 	pub point: Vec3,
 	pub normal: Vec3,
 }
@@ -186,4 +191,26 @@ pub mod materials {
 			return true;
 		}
 	}
+
+	pub struct Metal {
+		pub albedo:Vec3,
+		pub fuzziness:f64,
+	}
+
+	impl Material for Metal {
+		fn apply(&self, input: &MaterialInput, output: &mut MaterialOutput) -> bool {
+			let unit_dir = &(input.incoming_ray.dir.normalize());
+			let surface_normal = &input.normal;
+			let mut reflected = unit_dir - &(2f64 * unit_dir.dot(&surface_normal) * surface_normal);
+			reflected = &reflected + &(self.fuzziness * &super::random_in_unit_sphere());
+			if reflected.dot(surface_normal) > 0f64 {
+				let hit_point = Vec3::new(input.point.x, input.point.y, input.point.z);
+				output.scattered = Ray::new(hit_point, reflected);
+				output.attenuation = Vec3::new(self.albedo.x, self.albedo.y, self.albedo.z);
+				return true;
+			}
+			return false;
+		}
+	}
+
 }
