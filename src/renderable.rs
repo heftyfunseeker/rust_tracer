@@ -186,8 +186,10 @@ pub mod materials {
 		fn apply(&self, input: &MaterialInput, output: &mut MaterialOutput) -> bool {
 			let target = &(&input.point + &input.normal) + &super::random_in_unit_sphere();
 			let dir = &target - &input.point;
+
 			output.scattered = Ray::new(Vec3::new(input.point.x, input.point.y, input.point.z), dir);
 			output.attenuation = Vec3::new(self.albedo.x, self.albedo.y, self.albedo.z);
+
 			return true;
 		}
 	}
@@ -199,10 +201,12 @@ pub mod materials {
 
 	impl Material for Metal {
 		fn apply(&self, input: &MaterialInput, output: &mut MaterialOutput) -> bool {
+			// get reflected
 			let unit_dir = &(input.incoming_ray.dir.normalize());
 			let surface_normal = &input.normal;
 			let mut reflected = unit_dir - &(2f64 * unit_dir.dot(&surface_normal) * surface_normal);
 			reflected = &reflected + &(self.fuzziness * &super::random_in_unit_sphere());
+
 			if reflected.dot(surface_normal) > 0f64 {
 				let hit_point = Vec3::new(input.point.x, input.point.y, input.point.z);
 				output.scattered = Ray::new(hit_point, reflected);
@@ -210,6 +214,51 @@ pub mod materials {
 				return true;
 			}
 			return false;
+		}
+	}
+
+
+	pub struct Dielectric {
+		pub refractionIndex:f64,
+	}
+
+	impl Material for Dielectric {
+		fn apply(&self, input: &MaterialInput, output: &mut MaterialOutput) -> bool {
+			let mut outward_normal:Vec3;
+
+			// get reflected
+			let unit_dir = &(input.incoming_ray.dir.normalize());
+			let surface_normal = &input.normal;
+			let mut reflected = unit_dir - &(2f64 * unit_dir.dot(&surface_normal) * surface_normal);
+			let mut niOverNt:f64 = 0f64;
+
+			output.attenuation = Vec3::new(1f64, 1f64, 1f64);
+
+			if unit_dir.dot(surface_normal) > 0f64 {
+				outward_normal = -1f64 * surface_normal;
+				niOverNt = self.refractionIndex;
+			}
+			else {
+				outward_normal = Vec3::new(surface_normal.x, surface_normal.y, surface_normal.z);
+				niOverNt = 1.0f64 / self.refractionIndex;
+			}
+
+			let hit_point = Vec3::new(input.point.x, input.point.y, input.point.z);
+
+			// calculate refraction
+			// ray dir, outward_normal, niOverNt, refracted
+			let dt = unit_dir.dot(&outward_normal);
+			let discriminant = 1f64 - niOverNt * niOverNt * (1f64 - dt * dt);
+			if discriminant > 0f64 { // fuck this fucking syntax
+				let refracted = &(niOverNt * &(unit_dir - &(dt * &outward_normal))) - &(&outward_normal * discriminant.sqrt());
+				output.scattered = Ray::new(hit_point, refracted);
+			}
+			else {
+				output.scattered = Ray::new(hit_point, reflected);
+				return false;
+			}
+
+			return true;
 		}
 	}
 
