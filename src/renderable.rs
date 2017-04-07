@@ -167,9 +167,9 @@ pub struct MaterialOutput {
 impl MaterialOutput {
     pub fn new() -> MaterialOutput {
         return MaterialOutput {
-                   attenuation: Vec3::new(0f64, 0f64, 0f64),
-                   scattered: Ray::new(Vec3::new(0f64, 0f64, 0f64), Vec3::new(0f64, 0f64, 0f64)),
-               };
+            attenuation: Vec3::new(0f64, 0f64, 0f64),
+            scattered: Ray::new(Vec3::new(0f64, 0f64, 0f64), Vec3::new(0f64, 0f64, 0f64)),
+       };
     }
 }
 

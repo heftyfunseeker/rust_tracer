@@ -58,8 +58,23 @@ fn main() {
     world.add_sphere(&right_sphere1, &dielectric);
     world.add_sphere(&right_sphere2, &dielectric);
     world.add_sphere(&left_sphere, &metal_1);
-    let camera = Camera::new();
-    let mut output_buffer = RenderBufferI32::new(200, 100);
+
+    let image_width_pixels = 800f64;
+    let image_height_pixels = 600f64;
+
+    let pos = Vec3::new(3f64, 3f64, 2f64);
+    let look_at = Vec3::new(0f64, 0f64, -1f64);
+    let camera = Camera::new(
+        &pos,
+        &look_at,
+        Vec3::new(0f64, 1f64, 0f64), // up
+        20f64, // fov
+        image_width_pixels/image_height_pixels, // aspect ratio
+        2f64, //aperture
+        (&pos - &look_at).length_squared().sqrt(), // focus dist
+    );
+
+    let mut output_buffer = RenderBufferI32::new(image_width_pixels as usize, image_height_pixels as usize);
 
     // render
     {
