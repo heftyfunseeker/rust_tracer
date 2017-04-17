@@ -14,19 +14,17 @@ pub struct HitRecord {
 impl HitRecord {
     pub fn new() -> HitRecord {
         return HitRecord {
-                   ray: Ray::new(Vec3::new(0f64, 0f64, 0f64), Vec3::new(0f64, 0f64, 0f64)),
-                   index: 0,
-                   time: 0f64,
-               };
+            ray: Ray::new(Vec3::new(0f64, 0f64, 0f64), Vec3::new(0f64, 0f64, 0f64)),
+            index: 0,
+            time: 0f64,
+        };
     }
 }
 
 fn random_in_unit_sphere() -> Vec3 {
     let u = &Vec3::new(1f64, 1f64, 1f64);
     let mut p = Vec3::new(2f64, 2f64, 2f64);
-    while {
-              p.length_squared() >= 1.0f64
-          } {
+    while p.length_squared() >= 1.0f64 {
         let rand_x = rand::thread_rng().gen_range(0f64, 1f64);
         let rand_y = rand::thread_rng().gen_range(0f64, 1f64);
         let rand_z = rand::thread_rng().gen_range(0f64, 1f64);
@@ -50,9 +48,9 @@ pub struct RenderList<'a> {
 impl<'a> RenderList<'a> {
     pub fn new() -> RenderList<'a> {
         return RenderList {
-                   m_spheres: Vec::new(),
-                   m_sphere_materials: Vec::new(),
-               };
+            m_spheres: Vec::new(),
+            m_sphere_materials: Vec::new(),
+        };
     }
 
     //@nicco: maybe return handle/index if we need it later?
@@ -66,12 +64,13 @@ impl<'a> RenderList<'a> {
         self.m_sphere_materials.push(material);
     }
 
-    pub fn try_get_hit_record(&self,
-                              ray: &Ray,
-                              time_min: f64,
-                              time_max: f64,
-                              hit_record: &mut HitRecord)
-                              -> bool {
+    pub fn try_get_hit_record(
+        &self,
+        ray: &Ray,
+        time_min: f64,
+        time_max: f64,
+        hit_record: &mut HitRecord
+    ) -> bool {
         let mut closest_hit_index: usize = usize::MAX;
         let mut closest_time = time_max;
         for index in 0..self.m_spheres.len() {
@@ -87,16 +86,19 @@ impl<'a> RenderList<'a> {
         }
         hit_record.time = closest_time;
         hit_record.index = closest_hit_index;
-        hit_record.ray = Ray::new(Vec3::new(ray.origin.x, ray.origin.y, ray.origin.z),
-                                  Vec3::new(ray.dir.x, ray.dir.y, ray.dir.z));
+        hit_record.ray = Ray::new(
+            Vec3::new(ray.origin.x, ray.origin.y, ray.origin.z),
+            Vec3::new(ray.dir.x, ray.dir.y, ray.dir.z)
+        );
         return true;
     }
 
-    pub fn get_material_package(&self,
-                                ray: &Ray,
-                                hit_time: f64,
-                                hit_index: usize)
-                                -> MaterialPackage<'a> {
+    pub fn get_material_package(
+        &self,
+        ray: &Ray,
+        hit_time: f64,
+        hit_index: usize
+    ) -> MaterialPackage<'a> {
         let sphere = &self.m_spheres[hit_index];
         //@nicco: make the vec3 and ray classes implement the copy trait
         let origin = Vec3::new(ray.origin.x, ray.origin.y, ray.origin.z);
@@ -199,8 +201,10 @@ pub mod materials {
             let target = &(&input.point + &input.normal) + &super::random_in_unit_sphere();
             let dir = &target - &input.point;
 
-            output.scattered = Ray::new(Vec3::new(input.point.x, input.point.y, input.point.z),
-                                        dir);
+            output.scattered = Ray::new(
+                Vec3::new(input.point.x, input.point.y, input.point.z),
+                dir
+            );
             output.attenuation = Vec3::new(self.albedo.x, self.albedo.y, self.albedo.z);
 
             return true;
@@ -294,9 +298,7 @@ pub mod materials {
             } else {
                 output.scattered = Ray::new(hit_point, refracted);
             }
-
             return true;
         }
     }
-
 }
